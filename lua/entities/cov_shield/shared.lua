@@ -1,6 +1,6 @@
 
 ENT.Type = "anim"
-ENT.Base = "base_gmodentity"
+ENT.Base = "prop_physics"
 
 ENT.PrintName = "Covenant Shield"
 
