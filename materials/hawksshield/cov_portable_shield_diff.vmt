@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "hawksshield/cov_portable_shield_diff"
+	"$bump" "hawksshield/cov_portable_shield_diff_bump"
+}

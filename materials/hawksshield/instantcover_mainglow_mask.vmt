@@ -1,0 +1,17 @@
+"UnlitGeneric"
+{
+	"$basetexture" "hawksshield/instantcover_mainglow_mask"
+	"$translucent" "1"
+	"$alpha" "1"
+	"$detail" "hawksshield/jackal_shield_mask"
+	"Proxies"
+	{
+
+		"TextureScroll"
+		{
+			"texturescrollvar" "$basetexturetransform"
+			"texturescrollrate" .4
+			"texturescrollangle" 90
+		}
+	}
+}
