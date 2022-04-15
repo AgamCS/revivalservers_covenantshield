@@ -29,7 +29,11 @@ SWEP.HoldType = "slam"
 
 function SWEP:Initialize()
     self:SetHoldType(self.HoldType)
-    self.throwVelocity = revivalservers_covShield.cfg.throwVelocity
+    
+end
+
+function SWEP:Equip()
+    self.throwVelocity = revivalservers_covShield.config.throwVelocity or self.throwVelocity
 end
 
 function SWEP:PrimaryAttack()
@@ -56,6 +60,6 @@ function SWEP:throwShield()
     if not phys:IsValid() then ent:Remove() return end
     aimvec:Mul(self.throwVelocity)
     aimvec:Add(VectorRand(-10, 10))
-    phys:AddForceCenter(aimvec)
+    phys:ApplyForceCenter(aimvec)
     self.Owner:StripWeapon("weapon_covShield")
 end
