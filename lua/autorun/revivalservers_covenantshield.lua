@@ -1,29 +1,29 @@
 
 revivalservers_covShield = revivalservers_covShield or {
-    cfg = {}
 }
 
 local function addDir(path)
     local files, folders = file.Find(path .. "*", "LUA")
         for k, v in pairs(files) do
+            print(path .. v)
             if string.StartWith(v, "sh_") then
                 if SERVER then
-                    AddCSLuaFile(v)
+                    AddCSLuaFile(path .. v)
                 end
-                include(v)
+                include(path .. v)
             elseif string.StartWith(v, "sv_") then
-                include(v)
+                include(path .. v)
             elseif  string.StartWith(v, "cl_") then
                 if SERVER then
-                    AddCSLuaFile(v)
+                    AddCSLuaFile(path .. v)
                 elseif CLIENT then
-                    include(v)
+                    include(path .. v)
                 end
             end
         end
 end
 
-addDir("revivalservers_covenantshield")
+addDir("revivalservers_covenantshield/")
 
 if CLIENT then
     resource.AddFile("models/hawksshield/hawksshield.mdl")
