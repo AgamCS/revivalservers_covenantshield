@@ -32,14 +32,15 @@ function ENT:Use(activator, caller)
 end
 
 function ENT:OnTakeDamage( dmginfo )
-	if ( not self.m_bApplyingDamage ) then
-		self.m_bApplyingDamage = true
-		self:TakeDamageInfo( dmginfo )
-		self.m_bApplyingDamage = false
-        if self:Health() >= self:GetMaxHealth() * 0.25 then
-            self:SetColor(self.unstableColor)
-        end
-	end
+	if self.m_bApplyingDamage then return end
+    local health, maxhealth = self:Health(), self:GetMaxHealth()
+    self.m_bApplyingDamage = true
+    self:TakeDamageInfo( dmginfo )
+    self.m_bApplyingDamage = false
+    if !revivalservers_covShield.config.unstableColor then return end
+    self:SetColor(LerpColor(health/maxhealth, self:GetColor(), revivalservers_covShield.config.unstableColor)
+
+	
 end
 
 function ENT:SetupDataTables()
@@ -52,4 +53,14 @@ function ENT:Think()
     --[[if self:GetOwner():GetPos():DistToSqr(self:GetPos()) > self.raidus then
         SafeRemoveEntity(self)
     end--]]
+end
+
+local function LerpColor(frac,from,to)
+	local col = Color(
+		Lerp(frac,from.r,to.r),
+		Lerp(frac,from.g,to.g),
+		Lerp(frac,from.b,to.b),
+		Lerp(frac,from.a,to.a)
+	)
+	return col
 end
