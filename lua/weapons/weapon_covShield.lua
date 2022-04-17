@@ -7,11 +7,12 @@ SWEP.Weight = 5
 SWEP.SlotPos = 2
 SWEP.Slot = 4
 SWEP.DrawAmmo = false
-SWEP.ViewModel = "models/weapons/v_pistol.mdl"
-SWEP.WorldModel = "models/weapons/w_pistol.mdl"
+SWEP.ViewModel = "models/hawksshield/weapons/c_covshield.mdl"
+SWEP.WorldModel = "models/hawksshield/weapons/c_covshield.mdl"
+SWEP.UseHands = true
 
-
-SWEP.throwVelocity = 60
+SWEP.throwForce = 300
+SWEP.movementVelocityMod = 150
 
 SWEP.Primary.ClipSize = -1
 SWEP.Primary.DefaultClip = -1
@@ -25,41 +26,66 @@ SWEP.Secondary.Automatic = false
 
 
 
-SWEP.HoldType = "slam"
+SWEP.HoldType = "pistol"
 
 function SWEP:Initialize()
     self:SetHoldType(self.HoldType)
-    
+    self:SetDeploySpeed(self:SequenceDuration(1))
+    self.throwForce = revivalservers_covShield.config.throwForce or self.throwForce
+    self.movementVelocityMod = revivalservers_covShield.config.movementVelocityMod or self.movementVelocityMod
+end
+
+function SWEP:Deploy()
+    self:SendWeaponAnim(ACT_VM_DRAW)
+    self:SetSequence(1)
+    print("dick" .. self:SequenceDuration(1))
+    self:ResetSequence(1)
 end
 
 function SWEP:Equip()
-    self.throwVelocity = revivalservers_covShield.config.throwVelocity or self.throwVelocity
+    
 end
 
 function SWEP:PrimaryAttack()
-    self:SetNextPrimaryFire( CurTime() + 3 )	
+    
+    if !self:IsSequenceFinished() then return end
     self:throwShield()
 end
 
 function SWEP:throwShield()
     if !IsValid(self.Owner) then return end
-
+    self:ResetSequence(2)
+    self.Owner:SetAnimation( PLAYER_ATTACK1 )
+    self:SetSequence(2) // fucked up sequence naming during model compile
+    local seq = self:GetSequence()
+    self:SendWeaponAnim(ACT_VM_RELOAD)// fucked up assigned the acts too
     if CLIENT then return end
-    local ent = ents.Create("cov_shield")
-    if !ent:IsValid() then return end
-    ent:SetOwner(self.Owner)
-    local aimvec = self.Owner:GetAimVector()
-	local pos = aimvec * 16
-	pos:Add(self.Owner:EyePos())
-    
-    ent:SetPos(pos)
-    ent:SetAngles(self.Owner:EyeAngles())
-    ent:Spawn()
+    timer.Simple(self:SequenceDuration(seq), function()
+        self:Deploy()
+        local ent = ents.Create("cov_shield")
+        if !ent:IsValid() then return end
+        local eyeAng = self.Owner:EyeAngles()
+        ent:SetPos(self.Owner:GetShootPos() + eyeAng:Forward() * 30)
+        ent:SetAngles(eyeAng)
+        ent.owner = self.Owner // Set owner in a variable since using the SetOwner function causes the spawned entity to have no collision
+        ent:Spawn()
+        ent:Activate()
+        local phys = ent:GetPhysicsObject()
+        if phys:IsValid() then
+            phys:SetVelocity(self:getThrowVelocity(self.Owner, ent))
+            //phys:AddAngleVelocity(Vector(-200, -200, -200))
+        end
+        //self.Owner:StripWeapon("weapon_covShield")
+    end)
+end
 
-    local phys = ent:GetPhysicsObject()
-    if not phys:IsValid() then ent:Remove() return end
-    aimvec:Mul(self.throwVelocity)
-    aimvec:Add(VectorRand(-10, 10))
-    phys:ApplyForceCenter(aimvec)
-    self.Owner:StripWeapon("weapon_covShield")
+function SWEP:getThrowVelocity(player, throwable)
+    local forward = player:EyeAngles():Forward()
+    local runMod = math.Clamp(player:GetVelocity():Length() / player:GetRunSpeed(), 0, 1)
+
+    local velocity = forward * self.throwForce
+    local velNorm = player:GetVelocity():GetNormal()
+    velocity = velocity + velNorm * self.movementVelocityMod * runMod
+    velocity.z = 0
+    return velocity
 end

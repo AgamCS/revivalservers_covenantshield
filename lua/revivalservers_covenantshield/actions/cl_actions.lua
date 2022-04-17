@@ -1,12 +1,12 @@
 local cfg = revivalservers_covShield.config
 net.Receive("cov_shield_action", function()
     local ent = net.ReadEntity()
-    timer.Create(ply:SteamID64() .. " cov_shieldPickup", cfg.pickupTime, 1, function() hook.Remove("HUDPaint", "coventantShield_pickupTimer") timer.Remove(ply:SteamID64() .. " cov_shieldPickup") end)
+    timer.Create("cov_shieldPickup", cfg.pickupTime, 1, function() hook.Remove("HUDPaint", "coventantShield_pickupTimer") timer.Remove("cov_shieldPickup") end)
     local startTime = CurTime()
     hook.Add("HUDPaint", "coventantShield_pickupTimer", function()
         local time = startTime + cfg.pickupTime - startTime
         local curtime = CurTime() - startTime
-        local timeleft = math.Round( timer.TimeLeft( (ply:SteamID64() .. " cov_shieldPickup"), 1) )
+        local timeleft = math.Round( timer.TimeLeft( ("cov_shieldPickup"), 1) )
         local endtime = cfg.pickupTime - timeleft
         local scrw, scrh = ScrW(), ScrH()
         local x, y, width, height = scrw * 0.5 - scrw * 0.15, scrh * 0.8 - scrh * 0.05, scrw * 0.3, scrh * 0.07
@@ -21,7 +21,20 @@ end)
 
 net.Receive("cov_shield_cancelAction", function()
     hook.Remove("HUDPaint", "coventantShield_pickupTimer")
-    if timer.Exists(ply:SteamID64() .. " cov_shieldPickup") then
-        timer.Remove(ply:SteamID64() .. " cov_shieldPickup")
+    if timer.Exists("cov_shieldPickup") then
+        timer.Remove("cov_shieldPickup")
     end
+end)
+
+concommand.Add("getentpos", function(ply)
+    local tr = ply:GetEyeTrace()
+    if !tr.Entity then return end
+    print(tr.Entity:GetClass())
+    print(tr.Entity:GetLocalPos())
+
+end)
+
+concommand.Add("bullshit", function(ply)
+
+    ply:EmitSound( "sound/covenantshieldsounds/shieldactivate.wav", 100, 1)
 end)

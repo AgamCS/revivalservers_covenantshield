@@ -1,69 +1,74 @@
-
-include("shared.lua")
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
+include("shared.lua")
 
 function ENT:Initialize()
-    self:SetModel("models/hawksshield/hawksshield.mdl")
+    self:SetModel("models/hawksshield/hawkshieldgib.mdl")
     self:PhysicsInit(SOLID_VPHYSICS)
     self:SetMoveType(MOVETYPE_VPHYSICS)
-    self:SetSolid(SOLID_BBOX)
+    self:SetSolid(SOLID_VPHYSICS)
+    self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
     self:SetUseType(SIMPLE_USE)
+    self:SetMaxHealth(revivalservers_covShield.config.health)
+    self:SetHealth(revivalservers_covShield.config.health)
     self.raidus = revivalservers_covShield.config.shieldRadius * revivalservers_covShield.config.shieldRadius
     self.unstableColor = revivalservers_covShield.config.unstableColor
-    self.state = "stable"
+    self.rechargeDelay = revivalservers_covShield.config.rechargeDelay
+    self.rechargeTime = revivalservers_covShield.config.rechargeTime
     self.nextRecharge = 0
-
+    table.insert(self.owner.covShields, self)
+    self:delayResetAngles(5)
     local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:Wake()
-        print(self:GetCollisionBounds())
     end
-    
-end
-
-function ENT:SetupDataTables()
-    self:NetworkVar( "Int", 0, "PickupTime" )
-    self:NetworkVar("Bool", 0, "isGettingPickedup")
-    self:SetPickupTime(revivalservers_covShield.config.pickupTime)
-    self:SetisGettingPickedup(false)
+    self:EmitSound(self.activateSounds[math.random(1, #self.activateSounds)], 100, 1)
 end
 
 function ENT:Use(activator, caller)
     
-    local owner = self:GetOwner()
-    if activator != owner then return end 
+    if activator != self.owner then return end 
     if activator:KeyDown(IN_WALK) then return end
-    revivalservers_covShield.UseShield(owner, self)
+    revivalservers_covShield.useShield(self.owner, self)
 end
 
 function ENT:OnTakeDamage( dmginfo )
-	if self.m_bApplyingDamage then return end
-    local health, maxhealth = self:Health(), self:GetMaxHealth()
-    self.m_bApplyingDamage = true
-    self:TakeDamageInfo( dmginfo )
-    self.m_bApplyingDamage = false
-    if !revivalservers_covShield.config.unstableColor then return end
-    self:SetColor(LerpColor(health/maxhealth, self:GetColor(), revivalservers_covShield.config.unstableColor))
-	self.nextRecharge = CurTime() + revivalservers_covShield.config.rechargeTime
+    self:SetHealth(self:Health() - dmginfo:GetDamage())
+    if !self.unstableColor then return end
+    local newCol = LerpColor(1 - self:Health()/self:GetMaxHealth(), self:GetColor(), self.unstableColor)
+    self:SetColor(newCol)
+	self.nextRecharge = CurTime() + self.rechargeDelay
+    if self:Health() <= 0 then
+        self:EmitSound( self.deactivateSounds[math.random(1, #self.deactivateSounds)], 100, 1)
+        self:SetModel("models/hawksshield/hawkshieldgib.mdl")
+        SafeRemoveEntityDelayed(self, 60)
+    end
 end
-
-
 
 function ENT:Think()
     if !self:IsValid() then return end
-    local health = self:checkForRecharge()
-    if health then
-        self:SetHealth(health)
+    local recharge = self:checkForRecharge()
+    
+    if recharge then
+        local healamount = math.Clamp(self:Health() + recharge, 0, self:GetMaxHealth())
+        self:SetHealth(healamount)
+        local clr = LerpColor(self:Health()/self:GetMaxHealth(), self:GetColor(), color_white)
+        self:SetColor(clr)
     end
-    if self:GetOwner():GetPos():DistToSqr(self:GetPos()) > self.raidus then
+    if !self.owner then return end
+    local vel = self.owner:GetVelocity()
+    if (vel.x > 50 || vel.y > 50) && (self:GetisGettingPickedup()) then
+        revivalservers_covShield.cancelShield(self.owner, self)
+    end
+    if self.owner:GetPos():DistToSqr(self:GetPos()) > self.raidus then
         SafeRemoveEntity(self)
     end
 end
 
 function ENT:checkForRecharge()
     if self.nextRecharge > CurTime() then return false end
-    local health = Lerp(revivalservers_covShield.config.rechargeTime / FrameTime(), self:Health(), self:GetMaxHealth())
+    local health = self:GetMaxHealth() / self.rechargeTime
+    
     return health
 end
 
@@ -74,6 +79,22 @@ local function LerpColor(frac,from,to)
 		Lerp(frac,from.b,to.b),
 		Lerp(frac,from.a,to.a)
 	)
-    print(col)
 	return col
 end
+
+function ENT:delayResetAngles(delay)
+    local endTime = CurTime() + delay
+    hook.Add("Think", self:EntIndex() .. "covShieldUpRightTime", function()
+        if !self:IsValid() then hook.Remove("Think", self:EntIndex() .. "covShieldUpRightTime") return end
+        if CurTime() < endTime then return end
+        local vel = self:GetVelocity()
+        if vel.x > 0 || vel.y > 0 || vel.z > 0 then return end
+        self:SetCollisionGroup(COLLISION_GROUP_NONE)
+        self:SetAngles(Angle(0, 0, 0))
+        self:SetModel("models/hawksshield/hawksshield.mdl")
+        self:PhysicsInit(SOLID_VPHYSICS)
+        hook.Remove("Think", self:EntIndex() .. "covShieldUpRightTime")
+    end)
+end
+
+scripted_ents.Register( ENT, "cov_shield" )
