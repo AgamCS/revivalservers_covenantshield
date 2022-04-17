@@ -11,6 +11,7 @@ end
 
 // shield entity settings
 revivalservers_covShield.config.health = 800 // How much damage the shield asborbs before deactivating
+revivalservers_covShield.config.activateDelay = 3 // How many seconds it takes for the shield to activate once it hits the ground
 revivalservers_covShield.config.pickupTime = 5 // How long, in seconds, it takes to pickup the shield
 revivalservers_covShield.config.shieldRadius = 1500 // Raidus the owner needs to stay to keep the shield active
 revivalservers_covShield.config.unstableColor = Color(255, 180, 212) // Color to set the entity the closer it reaches unstable. Set to nil to disable changing color
@@ -19,13 +20,13 @@ revivalservers_covShield.config.rechargeDelay = 8 // Time in seconds, for the sh
 revivalservers_covShield.config.rechargeTime = 9 // Time in seconds, for the shield to recharge from deactivated to stable
 
 revivalservers_covShield.config.deactiveSounds = {
-    "sound/covenantshieldsounds/shielddeactivate1.wav",
-    "sound/covenantshieldsounds/shielddeactivate2.wav",
-    "sound/covenantshieldsounds/shielddeactivate3.wav",
+    "covenantshieldsounds/shielddeactivate1.wav",
+    "covenantshieldsounds/shielddeactivate2.wav",
+    --"sound/covenantshieldsounds/shielddeactivate3.wav",
 }
 
 revivalservers_covShield.config.activateSounds = {
-    "sound/covenantshieldsounds/shieldactivate.wav",
+    "covenantshieldsounds/shieldactivate.wav",
 }
 
 for k, v in pairs(revivalservers_covShield.config.deactiveSounds) do

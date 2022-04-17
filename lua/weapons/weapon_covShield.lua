@@ -38,8 +38,9 @@ end
 function SWEP:Deploy()
     self:SendWeaponAnim(ACT_VM_DRAW)
     self:SetSequence(1)
-    print("dick" .. self:SequenceDuration(1))
     self:ResetSequence(1)
+    self:SetNextPrimaryFire( CurTime() + self:SequenceDuration(1))
+    
 end
 
 function SWEP:Equip()
@@ -48,8 +49,9 @@ end
 
 function SWEP:PrimaryAttack()
     
-    if !self:IsSequenceFinished() then return end
+    self:SetNextPrimaryFire( CurTime() + self:SequenceDuration(2))	
     self:throwShield()
+    
 end
 
 function SWEP:throwShield()
@@ -57,11 +59,11 @@ function SWEP:throwShield()
     self:ResetSequence(2)
     self.Owner:SetAnimation( PLAYER_ATTACK1 )
     self:SetSequence(2) // fucked up sequence naming during model compile
-    local seq = self:GetSequence()
     self:SendWeaponAnim(ACT_VM_RELOAD)// fucked up assigned the acts too
     if CLIENT then return end
-    timer.Simple(self:SequenceDuration(seq), function()
+    timer.Simple(self:SequenceDuration(2) - 0.25, function()
         self:Deploy()
+        
         local ent = ents.Create("cov_shield")
         if !ent:IsValid() then return end
         local eyeAng = self.Owner:EyeAngles()

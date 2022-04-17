@@ -2,6 +2,9 @@ AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
+game.AddParticles("particles/covshieldspark.pcf")
+PrecacheParticleSystem("covShieldSpark")
+
 function ENT:Initialize()
     self:SetModel("models/hawksshield/hawkshieldgib.mdl")
     self:PhysicsInit(SOLID_VPHYSICS)
@@ -17,12 +20,11 @@ function ENT:Initialize()
     self.rechargeTime = revivalservers_covShield.config.rechargeTime
     self.nextRecharge = 0
     table.insert(self.owner.covShields, self)
-    self:delayResetAngles(5)
+    self:delayResetAngles(1)
     local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:Wake()
     end
-    self:EmitSound(self.activateSounds[math.random(1, #self.activateSounds)], 100, 1)
 end
 
 function ENT:Use(activator, caller)
@@ -39,7 +41,10 @@ function ENT:OnTakeDamage( dmginfo )
     self:SetColor(newCol)
 	self.nextRecharge = CurTime() + self.rechargeDelay
     if self:Health() <= 0 then
-        self:EmitSound( self.deactivateSounds[math.random(1, #self.deactivateSounds)], 100, 1)
+        ParticleEffect("covShieldSparks", self:GetPos(), self:GetAngles(), self)
+        local bug = self.deactivateSounds[math.random(1, #self.deactivateSounds)]
+        self:EmitSound(bug, 100, 100, 1)
+        print(bug)
         self:SetModel("models/hawksshield/hawkshieldgib.mdl")
         SafeRemoveEntityDelayed(self, 60)
     end
@@ -84,15 +89,17 @@ end
 
 function ENT:delayResetAngles(delay)
     local endTime = CurTime() + delay
+    local forward = self.owner:EyeAngles()
     hook.Add("Think", self:EntIndex() .. "covShieldUpRightTime", function()
         if !self:IsValid() then hook.Remove("Think", self:EntIndex() .. "covShieldUpRightTime") return end
         if CurTime() < endTime then return end
         local vel = self:GetVelocity()
         if vel.x > 0 || vel.y > 0 || vel.z > 0 then return end
         self:SetCollisionGroup(COLLISION_GROUP_NONE)
-        self:SetAngles(Angle(0, 0, 0))
+        self:SetAngles(Angle(0, forward.y, 0))
         self:SetModel("models/hawksshield/hawksshield.mdl")
         self:PhysicsInit(SOLID_VPHYSICS)
+        self:EmitSound(self.activateSounds[math.random(1, #self.activateSounds)], 100, 100, 1)
         hook.Remove("Think", self:EntIndex() .. "covShieldUpRightTime")
     end)
 end
