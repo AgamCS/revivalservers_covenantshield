@@ -3,7 +3,7 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 game.AddParticles("particles/covshieldspark.pcf")
-PrecacheParticleSystem("covShieldSpark")
+PrecacheParticleSystem("covShieldSparks")
 
 function ENT:Initialize()
     self:SetModel("models/hawksshield/hawkshieldgib.mdl")
@@ -18,9 +18,10 @@ function ENT:Initialize()
     self.unstableColor = revivalservers_covShield.config.unstableColor
     self.rechargeDelay = revivalservers_covShield.config.rechargeDelay
     self.rechargeTime = revivalservers_covShield.config.rechargeTime
+    self.state = "stable"
     self.nextRecharge = 0
     table.insert(self.owner.covShields, self)
-    self:delayResetAngles(1)
+    self:delayResetAngles(revivalservers_covShield.config.activateDelay)
     local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:Wake()
@@ -41,10 +42,10 @@ function ENT:OnTakeDamage( dmginfo )
     self:SetColor(newCol)
 	self.nextRecharge = CurTime() + self.rechargeDelay
     if self:Health() <= 0 then
-        ParticleEffect("covShieldSparks", self:GetPos(), self:GetAngles(), self)
-        local bug = self.deactivateSounds[math.random(1, #self.deactivateSounds)]
-        self:EmitSound(bug, 100, 100, 1)
-        print(bug)
+        if self.state == "deactivated" then return end
+        self.state = "deactivated"
+        ParticleEffect("covShieldSparks", self:GetPos() + Vector(0, 0, 50), self:GetAngles(), self)
+        self:EmitSound(self.deactivateSounds[math.random(1, #self.deactivateSounds)], 100, 100, 1)
         self:SetModel("models/hawksshield/hawkshieldgib.mdl")
         SafeRemoveEntityDelayed(self, 60)
     end
@@ -71,6 +72,7 @@ function ENT:Think()
 end
 
 function ENT:checkForRecharge()
+    if self.stable != "stable" then return end
     if self.nextRecharge > CurTime() then return false end
     local health = self:GetMaxHealth() / self.rechargeTime
     

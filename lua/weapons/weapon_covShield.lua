@@ -24,9 +24,7 @@ SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Ammo = "none"
 SWEP.Secondary.Automatic = false
 
-
-
-SWEP.HoldType = "pistol"
+SWEP.HoldType = "slam"
 
 function SWEP:Initialize()
     self:SetHoldType(self.HoldType)
@@ -77,7 +75,7 @@ function SWEP:throwShield()
             phys:SetVelocity(self:getThrowVelocity(self.Owner, ent))
             //phys:AddAngleVelocity(Vector(-200, -200, -200))
         end
-        //self.Owner:StripWeapon("weapon_covShield")
+        self.Owner:StripWeapon("weapon_covShield")
     end)
 end
 

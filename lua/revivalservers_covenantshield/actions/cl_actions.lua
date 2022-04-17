@@ -35,6 +35,5 @@ concommand.Add("getentpos", function(ply)
 end)
 
 concommand.Add("bullshit", function(ply)
-
-    ply:EmitSound( "sound/covenantshieldsounds/shieldactivate.wav", 100, 1)
+    ParticleEffect( "covShieldSparks", ply:GetEyeTrace().HitPos, Angle( 0, 0, 0 ) )
 end)
